@@ -1,0 +1,22 @@
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /var/www/html;
+    index index.html index.htm;
+
+    server_name _;
+
+    location /align {
+        proxy_pass http://localhost:5000/align;
+    }
+
+    location /poll {
+        proxy_pass http://localhost:5000/poll;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

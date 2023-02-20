@@ -42,7 +42,7 @@ async def raw_to_bam(accession: str, task_id: str):
         logs[task_id].append(s)
         logging.info(s)
 
-    do_log(f"Processing SRA accession {accession}")
+    do_log(f"Processing accession {accession}")
 
     # Download FASTQ files
     #cmd_fastq_dump = f'fasterq-dump --split-files {accession}'
@@ -62,6 +62,33 @@ async def raw_to_bam(accession: str, task_id: str):
             break
         else:
             type = "single"
+    max_reads = 100000
+    # get number of reads in file
+    if type == "paired":
+        cmd_count_reads = f'zcat {accession}_1.fastq.gz | wc -l'
+    else:
+        cmd_count_reads = f'zcat {accession}.fastq.gz | wc -l'
+    proc = await asyncio.create_subprocess_shell(cmd_count_reads, stdout=asyncio.subprocess.PIPE)
+    stdout, stderr = await proc.communicate()
+    nreads = int(stdout.decode('utf-8').strip())
+    if nreads > max_reads:
+        # downsample with seqtk
+        if type == "paired":
+            downsample_fraction = max_reads / nreads
+            cmd_downsample = f'seqtk sample -s100 {accession}_1.fastq.gz {downsample_fraction} > {accession}_1.fastq.gz.tmp && mv {accession}_1.fastq.gz.tmp {accession}_1.fastq.gz'
+            proc = await asyncio.create_subprocess_shell(cmd_downsample)
+            await proc.wait()
+            cmd_downsample = f'seqtk sample -s100 {accession}_2.fastq.gz {downsample_fraction} > {accession}_2.fastq.gz.tmp && mv {accession}_2.fastq.gz.tmp {accession}_2.fastq.gz'
+            proc = await asyncio.create_subprocess_shell(cmd_downsample)
+            await proc.wait()
+        else:
+            downsample_fraction = max_reads / nreads
+            cmd_downsample = f'seqtk sample -s100 {accession}.fastq.gz {downsample_fraction} > {accession}.fastq.gz.tmp && mv {accession}.fastq.gz.tmp {accession}.fastq.gz'
+            proc = await asyncio.create_subprocess_shell(cmd_downsample)
+            await proc.wait()
+
+
+
 
     do_log(f"Type: {type}")
 
@@ -84,15 +111,21 @@ async def raw_to_bam(accession: str, task_id: str):
     await proc.wait()
     do_log(f"Aligned {accession} to reference genome")
 
-    cmd_sort_bam = f'samtools sort -o {accession}.sorted.bam {accession}.bam'
-    proc = await asyncio.create_subprocess_shell(cmd_minimap2)
+    cmd_sort_bam = f'samtools sort {accession}.bam > {accession}.sorted.bam'
+    proc = await asyncio.create_subprocess_shell(cmd_sort_bam)
     await proc.wait()
     do_log(f"Sorted BAM file for {accession}")
 
     cmd_index_bam = f'samtools index {accession}.sorted.bam'
-    proc = await asyncio.create_subprocess_shell(cmd_minimap2)
+    proc = await asyncio.create_subprocess_shell(cmd_index_bam)
     await proc.wait()
     do_log(f"Indexed BAM file for {accession}")
+
+    # mv to /var/www/html
+    cmd_mv = f'mv {accession}.sorted.bam* /var/www/html'
+    proc = await asyncio.create_subprocess_shell(cmd_mv)
+    await proc.wait()
+    do_log(f"Moved BAM file for {accession} to /var/www/html")
 
     do_log(f"Finished processing {accession}")
 
@@ -131,24 +164,19 @@ async def poll(task_id: str):
     
 
 
-@app.get("/dl_align/{accession}")
-async def index(accession: str):
-    logging.info(f"Returning BAM index file for {accession}")
+@app.get("/test")
+async def test():
+    return "hello world"
 
-    # Return contents of BAM index file
-    def generate():
-        with open(f"{accession}.sorted.bam", "rb") as file:
+@app.get("/{path:path}")
+async def return_from_root(path: str):
+    logging.info(f"Returning file {path}")
+    # Return from js/build/ directory
+    def generate(path: str):
+        if path == "":
+            path = "index.html"
+        with open(f"js/build/{path}", "rb") as file:
             yield from file
-
-    return StreamingResponse(generate(), media_type="application/octet-stream")
-
-@app.get("/index/{accession}")
-async def index(accession: str):
-    logging.info(f"Returning BAM index file for {accession}")
-
-    # Return contents of BAM index file
-    def generate():
-        with open(f"{accession}.sorted.bam.bai", "rb") as file:
-            yield from file
-
-    return StreamingResponse(generate(), media_type="application/octet-stream")
+    
+    return StreamingResponse(generate(path=path))
+    

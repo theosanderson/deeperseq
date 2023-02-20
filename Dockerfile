@@ -10,12 +10,16 @@ RUN apt-get update && apt-get install -y \
     samtools \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get -y update && apt-get -y install nginx
+
+RUN conda install -n base conda-libmamba-solver
+RUN conda config --set solver libmamba
+
 # Add Bioconda channels
 RUN conda config --add channels conda-forge && \
     conda config --add channels bioconda
 
-# Create a new Conda environment and install necessary packages
-RUN conda create -n myenv fastapi uvicorn minimap2 sra-tools fastq-dl
+RUN conda create -n myenv fastapi uvicorn minimap2 sra-tools fastq-dl seqtk
 
 # Activate the environment
 RUN echo "conda activate myenv" > ~/.bashrc
@@ -25,9 +29,17 @@ ENV PATH /opt/conda/envs/myenv/bin:$PATH
 COPY app.py .
 COPY ref.fa .
 COPY count_lines.py .
+COPY servers.sh .
+# copy from nginx_config to /etc/nginx/sites-enabled/default
+COPY nginx_conf /etc/nginx/sites-enabled/default
+
+# COPY js/build directory into the container
+COPY js/build /var/www/html
 
 # Expose the necessary port
 EXPOSE 80
+EXPOSE 81
 
-# Start the FastAPI app using uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80"]
+
+# Start FastAPI and nginx
+CMD ["bash", "servers.sh"]
