@@ -1,7 +1,7 @@
 import React, { useState,useRef , useEffect} from 'react';
 import axios from 'axios';
-import igv from "https://cdn.jsdelivr.net/npm/igv@2.13.11/dist/igv.esm.min.js"
-const backend = "http://localhost:80"
+import igv from "igv"
+const backend = "http://35.226.207.72"
 
 function Alignment() {
   const [accession, setAccession] = useState('');
