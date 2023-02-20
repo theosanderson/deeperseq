@@ -27,6 +27,10 @@ function Alignment() {
       const baiURL = `${backend}/${accession}.sorted.bam.bai`;
       console.log("creating IGV");
       igv.createBrowser(igvDiv.current, {
+        showSVGButton: true,
+        showCursorTrackingGuide: true,
+       
+        
         //ref is /ref.fa
         reference: {
           genome: 'ASM985889v3',
@@ -158,7 +162,7 @@ function Alignment() {
         <div className="flex flex-col items-center space-y-4">
           <ClipLoader color="#000" loading={true} size={150} />
           <h2 className="text-xl font-bold">Alignment Processing</h2>
-          <p>Lines: {lines}</p>
+          
           <h3 className="text-lg font-bold">Logs</h3>
           <ul className="divide-y divide-gray-300 w-full max-w-md">
             {logs.map((log, index) => log && <li key={index}><pre>{log}</pre></li>)}
