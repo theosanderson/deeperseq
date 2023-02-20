@@ -40,6 +40,8 @@ function Alignment() {
             url: bamURL,
             indexURL: baiURL,
             name: 'Aligned Reads',
+            displayMode: 'SQUISHED',
+            
           },
         ],
       });

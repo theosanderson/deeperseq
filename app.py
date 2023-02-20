@@ -31,6 +31,8 @@ logging.basicConfig(
 # Store running tasks and logs
 tasks = {}
 logs = {}
+import time
+when_made = {}
 
 import glob, os
 
@@ -72,6 +74,7 @@ async def raw_to_bam(accession: str, task_id: str):
     stdout, stderr = await proc.communicate()
     nreads = int(stdout.decode('utf-8').strip())
     if nreads > max_reads:
+        do_log(f"Downsampling {accession} from {nreads} to {max_reads} reads")
         # downsample with seqtk
         if type == "paired":
             downsample_fraction = max_reads / nreads
@@ -125,6 +128,21 @@ async def raw_to_bam(accession: str, task_id: str):
     cmd_mv = f'mv {accession}.sorted.bam* /var/www/html'
     proc = await asyncio.create_subprocess_shell(cmd_mv)
     await proc.wait()
+    when_made[accession] = time.time()
+    # we delete the fastq files now
+    cmd_rm = f'rm {accession}*.fastq.gz'
+    proc = await asyncio.create_subprocess_shell(cmd_rm)
+    await proc.wait()
+
+    # we delete any bam files older than 1 hour
+    for file, when in when_made.items():
+        if time.time() - when > 3600:
+            cmd_rm = f'rm /var/www/html/{file}.sorted.bam*'
+            proc = await asyncio.create_subprocess_shell(cmd_rm)
+            await proc.wait()
+            when_made.pop(file)
+
+   
     do_log(f"Moved BAM file for {accession} to /var/www/html")
 
     do_log(f"Finished processing {accession}")
