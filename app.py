@@ -32,37 +32,69 @@ logging.basicConfig(
 tasks = {}
 logs = {}
 
+import glob, os
+
+
+
 async def raw_to_bam(accession: str, task_id: str):
-    logging.info(f"Processing SRA accession {accession}")
-    logs[task_id].append(f"Processing SRA accession {accession}")
+
+    def do_log(s):
+        logs[task_id].append(s)
+        logging.info(s)
+
+    do_log(f"Processing SRA accession {accession}")
 
     # Download FASTQ files
-    cmd_fastq_dump = f'fasterq-dump --split-files {accession}'
+    #cmd_fastq_dump = f'fasterq-dump --split-files {accession}'
+    # using Aspera from ENA
+    cmd_fastq_dump = f'fastq-dl -a {accession}'
     proc = await asyncio.create_subprocess_shell(cmd_fastq_dump)
     await proc.wait()
-    logging.info(f"Downloaded FASTQ files for {accession}")
-    logs[task_id].append(f"Downloaded FASTQ files for {accession}")
+    
+    # check what files were downloaded
+    files = glob.glob(f"{accession}*.fastq.gz")
+    do_log(f"Downloaded {len(files)} files: for {accession}")
+    do_log(f"Files: {files}")
+    type = None
+    for file in files:
+        if "1.fastq.gz" in file:
+            type = "paired"
+            break
+        else:
+            type = "single"
 
-    # Align to reference genome using minimap2 and pipe to samtools view
-    cmd_minimap2 = f'minimap2 -a ./ref.fa {accession}_1.fastq {accession}_2.fastq | samtools view -bS - > {accession}.bam'
+    do_log(f"Type: {type}")
+
+    # find how many cores are available
+    cmd_nproc = f'nproc'
+    proc = await asyncio.create_subprocess_shell(cmd_nproc, stdout=asyncio.subprocess.PIPE)
+    stdout, stderr = await proc.communicate()
+    nproc = int(stdout.decode('utf-8').strip())
+    do_log(f"Found {nproc} cores")
+
+    
+
+
+    if type == "paired":
+        cmd_minimap2 = f'minimap2 -a ./ref.fa {accession}_1.fastq.gz {accession}_2.fastq.gz -t {nproc} | python count_lines.py {task_id}.lines |  samtools view -bS - > {accession}.bam'
+    else:   
+        cmd_minimap2 = f'minimap2 -a ./ref.fa {accession}.fastq.gz | python count_lines.py {task_id}.lines | samtools view -bS -t {nproc} - > {accession}.bam'
+    
     proc = await asyncio.create_subprocess_shell(cmd_minimap2)
     await proc.wait()
-    logging.info(f"Aligned reads for {accession}")
-    logs[task_id].append(f"Aligned reads for {accession}")
+    do_log(f"Aligned {accession} to reference genome")
 
     cmd_sort_bam = f'samtools sort -o {accession}.sorted.bam {accession}.bam'
     proc = await asyncio.create_subprocess_shell(cmd_minimap2)
     await proc.wait()
-    logging.info(f"Sorted BAM file for {accession}")
-    logs[task_id].append(f"Sorted BAM file for {accession}")
+    do_log(f"Sorted BAM file for {accession}")
 
     cmd_index_bam = f'samtools index {accession}.sorted.bam'
     proc = await asyncio.create_subprocess_shell(cmd_minimap2)
     await proc.wait()
-    logging.info(f"Indexed BAM file for {accession}")
-    logs[task_id].append(f"Indexed BAM file for {accession}")
+    do_log(f"Indexed BAM file for {accession}")
 
-    logs[task_id].append(f"Finished processing {accession}")
+    do_log(f"Finished processing {accession}")
 
 async def start_task(accession: str):
     task_id = str(uuid.uuid4())
@@ -83,7 +115,14 @@ async def poll(task_id: str):
         return {"error": "Invalid task ID"}
 
     if not tasks[task_id].done():
-        return {"status": "processing", "log": logs[task_id]}
+        # read task_id.lines to get current line count
+        try:
+            with open(f"{task_id}.lines", "r") as f:
+                lines = int(f.read())
+        except:
+            lines = 0
+        
+        return {"status": "processing", "log": logs[task_id], "lines": lines}
 
     if task_id in logs:
         return {"status": "complete", "log": logs[task_id]}

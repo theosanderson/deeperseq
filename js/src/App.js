@@ -1,12 +1,13 @@
 import React, { useState,useRef , useEffect} from 'react';
 import axios from 'axios';
 import igv from "igv"
-const backend = "http://35.226.207.72"
+const backend = "http://localhost"
 
 function Alignment() {
   const [accession, setAccession] = useState('');
   const [taskID, setTaskID] = useState('');
   const [logs, setLogs] = useState([]);
+  const [lines, setLines] = useState([]);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [bamURL, setBamURL] = useState('');
@@ -66,6 +67,7 @@ function Alignment() {
       const taskStatus = response.data.status;
       if (taskStatus === 'processing') {
         setLogs(response.data.log);
+        setLines(response.data.lines);
         setTimeout(() => pollTask(taskID), 5000);
       } else if (taskStatus === 'complete') {
         setLogs(response.data.log);
@@ -95,6 +97,7 @@ function Alignment() {
 
         <div>
           <h2>Alignment Processing</h2>
+          <p>Lines: {lines}</p>
           <h3>Logs</h3>
           <ul>
             {logs.map(
