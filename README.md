@@ -1,3 +1,3 @@
-# deepseqer
+# deeperseq
 
 ### https://deepseqer.theo.io
