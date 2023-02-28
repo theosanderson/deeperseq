@@ -133,7 +133,7 @@ function Alignment() {
       <div className="pb-3">
     <div className="flex flex-col items-center space-y-4">
       
-      <h1 className="text-2xl font-bold mt-2">DeepSeqer</h1>
+      <h1 className="text-2xl font-bold mt-2">DeeperSeq</h1>
       <p className="text-gray-500">A tool for viewing SARS-CoV-2 deep sequencing data</p>
       {status !== 'complete' && status!== 'processing' && (
         <>
