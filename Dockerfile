@@ -1,3 +1,16 @@
+# Build image
+FROM node:14-alpine AS build
+
+WORKDIR /app
+
+# Copy the frontend source code and install dependencies
+COPY js/package.json js/yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+COPY js ./
+RUN yarn build
+
+# Final image
 FROM continuumio/miniconda3:latest
 
 # Install necessary system packages, including aspera
@@ -33,13 +46,12 @@ COPY servers.sh .
 # copy from nginx_config to /etc/nginx/sites-enabled/default
 COPY nginx_conf /etc/nginx/sites-enabled/default
 
-# COPY js/build directory into the container
-COPY js/build /var/www/html
+# Copy the built frontend from the build image
+COPY --from=build /app/build /var/www/html
 
 # Expose the necessary port
 EXPOSE 80
 EXPOSE 81
-
 
 # Start FastAPI and nginx
 CMD ["bash", "servers.sh"]
