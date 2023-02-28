@@ -3,6 +3,8 @@ name: Build and push Docker image
 on:
   push:
     branches: [main]
+  
+  workflow_dispatch:
 
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
