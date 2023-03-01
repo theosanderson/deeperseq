@@ -51,7 +51,25 @@ async def raw_to_bam(accession: str, task_id: str):
     # using Aspera from ENA
     cmd_fastq_dump = f'fastq-dl -a {accession}'
     proc = await asyncio.create_subprocess_shell(cmd_fastq_dump)
-    await proc.wait()
+    #await proc.wait()
+    delay_time = 1.0
+    # wait a bit, then check for files with a size
+    last_total_size = -1
+    while True:
+        await asyncio.sleep(delay_time)
+        files = glob.glob(f"{accession}*")
+        
+        # check if proc is done
+        if proc.returncode is not None:
+            break
+        # get the total size of the files
+        total_size = 0
+        for file in files:
+            total_size += os.path.getsize(file)
+        if total_size != last_total_size:
+            logs[task_id].append(f"Downloading: {total_size} bytes")
+            last_total_size = total_size
+
     
     # check what files were downloaded
     files = glob.glob(f"{accession}*.fastq.gz")
