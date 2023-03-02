@@ -146,7 +146,7 @@ function Alignment() {
       {status !== 'complete' && status!== 'processing' && (
         <>
          <p
-        className='text-center'>Enter a SRR/ERR accession. This will be mapped to the Hu-1 reference and then displayed<br />(It will be downsampled to 100,000 reads).</p>
+        className='text-center'>Enter a SRR/ERR accession. This will be mapped to the selected reference and then displayed<br />(It will be downsampled to 100,000 reads).</p>
       <form className="flex flex-col space-y-2" onSubmit={handleAlignmentSubmit}>
        <p>
 
