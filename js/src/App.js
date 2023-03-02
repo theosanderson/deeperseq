@@ -142,7 +142,7 @@ function Alignment() {
     <div className="flex flex-col items-center space-y-4">
       
       <h1 className="text-2xl font-bold mt-2">DeeperSeq</h1>
-      <p className="text-gray-500">A tool for viewing microbial deep sequencing data</p>
+      <p className="text-gray-500">A tool for viewing deep viral sequencing data</p>
       {status !== 'complete' && status!== 'processing' && (
         <>
          <p
