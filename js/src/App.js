@@ -142,11 +142,11 @@ function Alignment() {
     <div className="flex flex-col items-center space-y-4">
       
       <h1 className="text-2xl font-bold mt-2">DeeperSeq</h1>
-      <p className="text-gray-500">A tool for viewing SARS-CoV-2 deep sequencing data</p>
+      <p className="text-gray-500">A tool for viewing microbial deep sequencing data</p>
       {status !== 'complete' && status!== 'processing' && (
         <>
          <p
-        className='text-center'>Enter a SRR/ERR accession. This will be mapped to the selected reference and then displayed<br />(It will be downsampled to 100,000 reads).</p>
+        className='text-center'>Enter a SRR/ERR accession. This will be mapped to the selected reference and then displayed<br />(Reads may be downsampled).</p>
       <form className="flex flex-col space-y-2" onSubmit={handleAlignmentSubmit}>
        <p>
 
