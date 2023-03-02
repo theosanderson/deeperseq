@@ -3,12 +3,20 @@ import axios from 'axios';
 import ClipLoader from 'react-spinners/ClipLoader';
 import igv from "igv"
 import './App.css';
+
+
+const referenceOptions = [
+  {id: "NC_016856.1", label: "Salmonella NC_016856.1", faUrl:"https://igv.genepattern.org/genomes/NC_016856.1/NC_016856.1.fna", downsampleTo: 1000000},
+  {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
+]
+
 const backend = ""
 
 
 
 function Alignment() {
   const [accession, setAccession] = useState('ERR8254282');
+  const [refGenome, setRefGenome] = useState(referenceOptions[1]);
 
   
   const [taskID, setTaskID] = useState('');
@@ -33,7 +41,7 @@ function Alignment() {
         
         //ref is /ref.fa
         reference: {
-          genome: 'ASM985889v3',
+          genome: refGenome.id,
         
         },
         locus: 'NC_045512.2:1-29903',
@@ -70,7 +78,7 @@ function Alignment() {
         setError('Accession must start with SRR or ERR');
         return;
       }
-      const response = await axios.post(`${backend}/align/${accession}`);
+      const response = await axios.post(`${backend}/align/${accession}?ref=${refGenome.faUrl}&downsampleTo=${refGenome.downsampleTo}`);
       const taskID = response.data.task_id;
       setTaskID(taskID);
       setStatus('processing');
@@ -140,7 +148,7 @@ function Alignment() {
          <p
         className='text-center'>Enter a SRR/ERR accession. This will be mapped to the Hu-1 reference and then displayed<br />(It will be downsampled to 100,000 reads).</p>
       <form className="flex flex-col space-y-2" onSubmit={handleAlignmentSubmit}>
-       
+       <p>
 
         <label className="font-semibold">
           SRA/ENA Accession ID:
@@ -151,6 +159,24 @@ function Alignment() {
             className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </label>
+        </p>
+        <p>
+        <label className="font-semibold">
+          Reference Genome:
+          <select
+            value={refGenome.id}
+            onChange={(e) => setRefGenome(referenceOptions.find((o) => o.id === e.target.value))}
+            className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {referenceOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        </p>
+
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">
           Start Alignment
         </button>

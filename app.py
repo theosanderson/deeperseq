@@ -38,7 +38,7 @@ import glob, os
 
 
 
-async def raw_to_bam(accession: str, task_id: str):
+async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int = 100000, refName: str = None):
 
     def do_log(s):
         logs[task_id].append(s)
@@ -113,6 +113,20 @@ async def raw_to_bam(accession: str, task_id: str):
 
     do_log(f"Type: {type}")
 
+    # Download reference genome, overwrite if it exists
+    cmd_wget = f'wget -O {accession}.ref.fa {ref}'
+    proc = await asyncio.create_subprocess_shell(cmd_wget)
+    await proc.wait()
+    do_log(f"Downloaded reference genome from {ref}")
+
+    # if refName is set then remove the first line of the reference genome, and replace it with the refName
+    if refName is not None:
+        cmd_rename = f"mv {accession}.ref.fa {accession}.ref.fa.tmp && echo '>{refName}' > {accession}.ref.fa && tail -n +2 {accession}.ref.fa.tmp >> {accession}.ref.fa && rm {accession}.ref.fa.tmp"
+        proc = await asyncio.create_subprocess_shell(cmd_rename)
+        await proc.wait()
+        do_log(f"Renamed reference genome to {refName}")
+        
+
     # find how many cores are available
     cmd_nproc = f'nproc'
     proc = await asyncio.create_subprocess_shell(cmd_nproc, stdout=asyncio.subprocess.PIPE)
@@ -124,9 +138,9 @@ async def raw_to_bam(accession: str, task_id: str):
 
 
     if type == "paired":
-        cmd_minimap2 = f'minimap2 -a ./ref.fa {accession}_1.fastq.gz {accession}_2.fastq.gz -t {nproc} | python count_lines.py {task_id}.lines |  samtools view -bS - > {accession}.bam'
+        cmd_minimap2 = f'minimap2 -a ./{accession}.ref.fa {accession}_1.fastq.gz {accession}_2.fastq.gz -t {nproc} | python count_lines.py {task_id}.lines |  samtools view -bS - > {accession}.bam'
     else:   
-        cmd_minimap2 = f'minimap2 -a ./ref.fa {accession}.fastq.gz | python count_lines.py {task_id}.lines | samtools view -bS -t {nproc} - > {accession}.bam'
+        cmd_minimap2 = f'minimap2 -a ./{accession}.ref.fa {accession}.fastq.gz | python count_lines.py {task_id}.lines | samtools view -bS -t {nproc} - > {accession}.bam'
     
     proc = await asyncio.create_subprocess_shell(cmd_minimap2)
     await proc.wait()
@@ -165,17 +179,18 @@ async def raw_to_bam(accession: str, task_id: str):
 
     do_log(f"Finished processing {accession}")
 
-async def start_task(accession: str):
+async def start_task(accession: str, ref: str = None, downSampleTo: int = 50000, refName: str = None):
     task_id = str(uuid.uuid4())
     logs[task_id] = []
-    task = asyncio.create_task(raw_to_bam(accession, task_id))
+    task = asyncio.create_task(raw_to_bam(accession, task_id, ref, downSampleTo, refName))
     tasks[task_id] = task
     return task_id
 
+#/align/ERR123456?ref=http://example.com/ref.fa
 @app.post("/align/{accession}")
-async def align(accession: str):
+async def align(accession: str, ref: str = None, downSampleTo: int = 50000, refName: str = None):
     logging.info(f"Aligning {accession} to reference genome")
-    task_id = await start_task(accession)
+    task_id = await start_task(accession, ref, downSampleTo, refName)
     return {"task_id": task_id}
 
 @app.get("/poll/{task_id}")
