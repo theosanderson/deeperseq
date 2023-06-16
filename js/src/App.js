@@ -33,17 +33,20 @@ function Alignment() {
     if (status=="complete") {
       const bamURL = `${backend}/${accession}.sorted.bam`;
       const baiURL = `${backend}/${accession}.sorted.bam.bai`;
+      const faUrl = refGenome.faUrl ?  refGenome.faUrl : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
       console.log("creating IGV");
+      const reference = refGenome.id == "ASM985889v3" ? {
+          genome: refGenome.id,
+        
+        
+        } : {fastaURL: faUrl, indexed: false}
       igv.createBrowser(igvDiv.current, {
         showSVGButton: true,
         showCursorTrackingGuide: true,
        
         
         //ref is /ref.fa
-        reference: {
-          genome: refGenome.id,
-        
-        },
+        reference: reference,
         locus: 'NC_045512.2:1-29903',
         tracks: [
           {
