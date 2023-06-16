@@ -78,7 +78,8 @@ function Alignment() {
         setError('Accession must start with SRR or ERR');
         return;
       }
-      const response = await axios.post(`${backend}/align/${accession}?ref=${refGenome.faUrl}&downsampleTo=${refGenome.downsampleTo}`);
+      const faUrl = refGenome.faUrl ?  refGenome.faUrl : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
+      const response = await axios.post(`${backend}/align/${accession}?ref=${}&downsampleTo=${refGenome.downsampleTo}`);
       const taskID = response.data.task_id;
       setTaskID(taskID);
       setStatus('processing');
