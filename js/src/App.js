@@ -47,7 +47,7 @@ function Alignment() {
         
         //ref is /ref.fa
         reference: reference,
-        locus: 'NC_045512.2:1-29903',
+        locus: refGenome.id == "ASM985889v3" ? 'NC_045512.2:1-29903' : undefined,
         tracks: [
           {
             type: 'alignment',
