@@ -79,7 +79,7 @@ function Alignment() {
         return;
       }
       const faUrl = refGenome.faUrl ?  refGenome.faUrl : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
-      const response = await axios.post(`${backend}/align/${accession}?ref=${}&downsampleTo=${refGenome.downsampleTo}`);
+      const response = await axios.post(`${backend}/align/${accession}?ref=${faUrl}&downsampleTo=${refGenome.downsampleTo}`);
       const taskID = response.data.task_id;
       setTaskID(taskID);
       setStatus('processing');
