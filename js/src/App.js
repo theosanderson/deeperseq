@@ -6,8 +6,8 @@ import './App.css';
 
 
 const referenceOptions = [
- // {id: "NC_016856.1", label: "Salmonella NC_016856.1", faUrl:"https://igv.genepattern.org/genomes/NC_016856.1/NC_016856.1.fna", downsampleTo: 1000000},
   {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
+ {id : "NC_007367", label: "Do not use", downsampleTo: 100000}
 ]
 
 const backend = ""
