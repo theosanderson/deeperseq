@@ -7,7 +7,8 @@ import './App.css';
 
 const referenceOptions = [
   {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
- {id : "NC_007367", label: "Do not use", downsampleTo: 100000}
+ {id : "NC_007367", label: "Do not use", downsampleTo: 100000},
+ {id: "custom", label: "Custom", downsampleTo: 100000} // added this line
 ]
 
 const backend = ""
@@ -17,6 +18,9 @@ const backend = ""
 function Alignment() {
   const [accession, setAccession] = useState('ERR8254282');
   const [refGenome, setRefGenome] = useState(referenceOptions[0]);
+  const [genbankId, setGenbankId] = useState('');
+  const faUrl = refGenome.faUrl ? refGenome.faUrl : refGenome.id === "custom" ? `https://genbank-api.vercel.app/api/genbank/${genbankId}?rettype=fasta` : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
+
 
   
   const [taskID, setTaskID] = useState('');
@@ -33,8 +37,7 @@ function Alignment() {
     if (status=="complete") {
       const bamURL = `${backend}/${accession}.sorted.bam`;
       const baiURL = `${backend}/${accession}.sorted.bam.bai`;
-      const faUrl = refGenome.faUrl ?  refGenome.faUrl : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
-      console.log("creating IGV");
+       console.log("creating IGV");
       const reference = refGenome.id == "ASM985889v3" ? {
           genome: refGenome.id,
         
@@ -81,7 +84,6 @@ function Alignment() {
         setError('Accession must start with SRR or ERR');
         return;
       }
-      const faUrl = refGenome.faUrl ?  refGenome.faUrl : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
       const response = await axios.post(`${backend}/align/${accession}?ref=${faUrl}&downsampleTo=${refGenome.downsampleTo}`);
       const taskID = response.data.task_id;
       setTaskID(taskID);
@@ -180,6 +182,20 @@ function Alignment() {
           </select>
         </label>
         </p>
+              {refGenome.id === "custom" && (
+  <p>
+    <label className="font-semibold">
+      Genbank ID:
+      <input
+        type="text"
+        value={genbankId}
+        onChange={e => setGenbankId(e.target.value)}
+        className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </label>
+  </p>
+)}
+
 
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">
           Start Alignment
