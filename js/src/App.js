@@ -11,6 +11,7 @@ const referenceOptions = [
 
   {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
 
+  // Credit to Viral MSA for sequences below
   {id: "NC_039345", label: "Bombali Virus (Bombali ebolavirus)", downsampleTo: 100000},
   {id: "NC_014373", label: "Bundibugyo Virus (Bundibugyo ebolavirus)", downsampleTo: 100000},
   {id: "NC_001477", label: "Dengue Virus 1", downsampleTo: 100000},
