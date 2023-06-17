@@ -6,6 +6,9 @@ import './App.css';
 
 
 const referenceOptions = [
+   {id: "custom", label: "Custom", downsampleTo: 100000},
+   {id: "-----", label: "-----", downsampleTo: 100000},
+
   {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
 
   {id: "NC_039345", label: "Bombali Virus (Bombali ebolavirus)", downsampleTo: 100000},
@@ -30,7 +33,7 @@ const referenceOptions = [
   {id: "NC_006432", label: "Sudan Virus (Sudan ebolavirus)", downsampleTo: 100000},
   {id: "NC_014372", label: "Tai Forest Virus (Tai Forest ebolavirus, Cote d'Ivoire ebolavirus)", downsampleTo: 100000},
  
- {id: "custom", label: "Custom", downsampleTo: 100000} 
+
 ]
 
 
@@ -41,7 +44,7 @@ const backend = ""
 
 function Alignment() {
   const [accession, setAccession] = useState('ERR8254282');
-  const [refGenome, setRefGenome] = useState(referenceOptions[0]);
+  const [refGenome, setRefGenome] = useState(referenceOptions[2]);
   const [genbankId, setGenbankId] = useState('');
   const faUrl = refGenome.faUrl ? refGenome.faUrl : refGenome.id === "custom" ? `https://genbank-api.vercel.app/api/genbank/${genbankId}?rettype=fasta` : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
 
@@ -164,9 +167,7 @@ function Alignment() {
       setTimeout(() => pollTask(taskID), 5000);
     }
   };
-
   return (
-    // overflow-y-auto
     <div className="bg-gray-100 min-h-screen overflow-y-auto pb-3">
       <div className="pb-3">
     <div className="flex flex-col items-center space-y-4">
@@ -178,25 +179,24 @@ function Alignment() {
          <p
         className='text-center'>Enter a SRR/ERR accession. This will be mapped to the selected reference and then displayed<br />(Reads may be downsampled).</p>
       <form className="flex flex-col space-y-2" onSubmit={handleAlignmentSubmit}>
-       <p>
-
-        <label className="font-semibold">
+       <div>
+        <label className="font-semibold block text-sm text-gray-600">
           SRA/ENA Accession ID:
           <input
             type="text"
             value={accession}
             onChange={handleAccessionChange}
-            className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
           />
         </label>
-        </p>
-        <p>
-        <label className="font-semibold">
+        </div>
+        <div>
+        <label className="font-semibold block text-sm text-gray-600">
           Reference Genome:
           <select
             value={refGenome.id}
             onChange={(e) => setRefGenome(referenceOptions.find((o) => o.id === e.target.value))}
-            className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
           >
             {referenceOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -205,23 +205,23 @@ function Alignment() {
             ))}
           </select>
         </label>
-        </p>
+        </div>
               {refGenome.id === "custom" && (
-  <p>
-    <label className="font-semibold">
+  <div>
+    <label className="font-semibold block text-sm text-gray-600">
       Genbank ID:
       <input
         type="text"
         value={genbankId}
         onChange={e => setGenbankId(e.target.value)}
-        className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
       />
     </label>
-  </p>
+  </div>
 )}
 
 
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md mt-2">
           Start Alignment
         </button>
       </form>
@@ -258,6 +258,7 @@ function Alignment() {
     </div>
     </div>
   );
+
 };
 
 export default Alignment;
