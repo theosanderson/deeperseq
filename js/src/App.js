@@ -210,11 +210,11 @@ function Alignment() {
               {refGenome.id === "custom" && (
   <div>
     <label className="font-semibold block text-sm text-gray-600">
-      Genbank ID:
+      Reference Genbank ID:
       <input
         type="text"
         value={genbankId}
-        onChange={e => setGenbankId(e.target.value)}
+        onChange={e => setGenbankId(e.target.value.trim())}
         className="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
       />
     </label>
