@@ -7,9 +7,33 @@ import './App.css';
 
 const referenceOptions = [
   {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
- {id : "NC_007367", label: "Do not use", downsampleTo: 100000},
- {id: "custom", label: "Custom", downsampleTo: 100000} // added this line
+
+  {id: "NC_039345", label: "Bombali Virus (Bombali ebolavirus)", downsampleTo: 100000},
+  {id: "NC_014373", label: "Bundibugyo Virus (Bundibugyo ebolavirus)", downsampleTo: 100000},
+  {id: "NC_001477", label: "Dengue Virus 1", downsampleTo: 100000},
+  {id: "NC_001474", label: "Dengue Virus 2", downsampleTo: 100000},
+  {id: "NC_001475", label: "Dengue Virus 3", downsampleTo: 100000},
+  {id: "NC_002640", label: "Dengue Virus 4", downsampleTo: 100000},
+  {id: "NC_002549", label: "Ebola Virus (Zaire ebolavirus)", downsampleTo: 100000},
+  {id: "NC_004102", label: "HCV genotype 1", downsampleTo: 100000},
+  {id: "NC_038882", label: "HCV genotype 1 (isolate H77)", downsampleTo: 100000},
+  {id: "NC_009823", label: "HCV genotype 2", downsampleTo: 100000},
+  {id: "NC_009824", label: "HCV genotype 3", downsampleTo: 100000},
+  {id: "NC_009825", label: "HCV genotype 4", downsampleTo: 100000},
+  {id: "NC_009826", label: "HCV genotype 5", downsampleTo: 100000},
+  {id: "NC_009827", label: "HCV genotype 6", downsampleTo: 100000},
+  {id: "NC_030791", label: "HCV genotype 7", downsampleTo: 100000},
+  {id: "NC_001802", label: "HIV-1", downsampleTo: 100000},
+  {id: "NC_001722", label: "HIV-2", downsampleTo: 100000},
+  {id: "NC_063383", label: "Monkeypox Virus", downsampleTo: 100000},
+  {id: "NC_004161", label: "Reston Virus (Reston ebolavirus)", downsampleTo: 100000},
+  {id: "NC_006432", label: "Sudan Virus (Sudan ebolavirus)", downsampleTo: 100000},
+  {id: "NC_014372", label: "Tai Forest Virus (Tai Forest ebolavirus, Cote d'Ivoire ebolavirus)", downsampleTo: 100000},
+ 
+ {id: "custom", label: "Custom", downsampleTo: 100000} 
 ]
+
+
 
 const backend = ""
 
