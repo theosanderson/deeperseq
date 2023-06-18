@@ -65,6 +65,7 @@ function Alignment() {
 
   useEffect(() => {
     if (status=="complete") {
+
       const bamURL = `${backend}/${accession}.sorted.bam`;
       const baiURL = `${backend}/${accession}.sorted.bam.bai`;
        console.log("creating IGV");
@@ -160,6 +161,12 @@ function Alignment() {
         setTimeout(() => pollTask(taskID), 5000);
       } else if (taskStatus === 'complete') {
         setLogs(response.data.log);
+        // check if "[ERROR]" in logs
+        const error = response.data.log.filter((line) => line.includes('[ERROR]'));
+        if (error.length > 0) {
+          window.alert('There was an error processing this accession');
+        }
+
         setStatus('complete');
         setBamURL(`${backend}/dl_align/${accession}`);
         setBaiURL(`${backend}/index/${accession}`);

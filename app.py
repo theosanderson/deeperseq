@@ -75,6 +75,10 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     files = glob.glob(f"{accession}*.fastq.gz")
     do_log(f"Downloaded {len(files)} files: for {accession}")
     do_log(f"Files: {files}")
+    # if zero files were downloaded, then exit and display error
+    if len(files) == 0:
+        do_log(f"[ERROR] Error downloading accession {accession}")
+        return
     type = None
     for file in files:
         if "1.fastq.gz" in file:
