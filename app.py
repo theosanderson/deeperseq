@@ -50,7 +50,10 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     #cmd_fastq_dump = f'fasterq-dump --split-files {accession}'
     # using Aspera from ENA
     cmd_fastq_dump = f'fastq-dl -a {accession}'
-    proc = await asyncio.create_subprocess_shell(cmd_fastq_dump)
+    proc = await asyncio.create_subprocess_shell(cmd_fastq_dump,
+    stderr = asyncio.subprocess.PIPE,
+    stdout = asyncio.subprocess.PIPE)
+
     #await proc.wait()
     delay_time = 1.0
     # wait a bit, then check for files with a size
@@ -70,7 +73,12 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
             logs[task_id].append(f"Downloading: {total_size} bytes")
             last_total_size = total_size
 
-    
+    # log from proc
+    stdout, stderr = await proc.communicate()
+    do_log(f"stdout: {stdout.decode('utf-8')}")
+    do_log(f"stderr: {stderr.decode('utf-8')}")
+
+
     # check what files were downloaded
     files = glob.glob(f"{accession}*.fastq.gz")
     do_log(f"Downloaded {len(files)} files: for {accession}")
