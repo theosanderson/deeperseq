@@ -45,7 +45,9 @@ const backend = ""
 
 
 function Alignment() {
-  const [accession, setAccession] = useState('ERR8254282');
+  const defaultAcc = "ERR8254282";
+  const defaultRef = referenceOptions[2];
+  const [accession, setAccession] = useState('');
   const [refGenome, setRefGenome] = useState(referenceOptions[2]);
   const [genbankId, setGenbankId] = useState('');
   const faUrl = refGenome.faUrl ? refGenome.faUrl : refGenome.id === "custom" ? `https://genbank-api.vercel.app/api/genbank/${genbankId}?rettype=fasta` : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
@@ -226,6 +228,18 @@ function Alignment() {
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md mt-2">
           Start Alignment
         </button>
+        <div className="text-center pt-8 text-gray-500">
+         {// load default accession with underlined text
+          }
+          <a href="#" onClick={() => {
+            setAccession('SRR10903401');
+            setRefGenome(defaultRef);
+          }
+          } className="underline">Fill form with example accessions</a>
+        </div>
+
+
+
       </form>
       </>
       )}
