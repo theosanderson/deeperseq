@@ -172,7 +172,7 @@ function Alignment() {
     }
   };
   return (
-    <div className="bg-gray-100 min-h-screen overflow-y-auto pb-3">
+    <div className="bg-gray-100 min-h-screen overflow-y-auto p-3">
       <div className="pb-3">
     <div className="flex flex-col items-center space-y-4">
       
