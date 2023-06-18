@@ -32,7 +32,7 @@ RUN conda config --set solver libmamba
 RUN conda config --add channels conda-forge && \
     conda config --add channels bioconda
 
-RUN conda create -n myenv fastapi uvicorn minimap2 sra-tools fastq-dl seqtk
+RUN conda create -n myenv fastapi uvicorn minimap2 sra-tools fastq-dl==2.0.1 seqtk
 
 # Activate the environment
 RUN echo "conda activate myenv" > ~/.bashrc
