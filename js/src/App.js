@@ -236,6 +236,10 @@ function Alignment() {
           }
           } className="underline">Fill form with example accessions</a>
         </div>
+        <div className="text-center pt-1 text-gray-500">
+
+          <a href="https://github.com/theosanderson/deeperseq/" className="underline">GitHub repo</a>
+        </div>
 
 
 
