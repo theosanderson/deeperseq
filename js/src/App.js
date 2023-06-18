@@ -33,8 +33,7 @@ const referenceOptions = [
   {id: "NC_004161", label: "Reston Virus (Reston ebolavirus)", downsampleTo: 100000},
   {id: "NC_006432", label: "Sudan Virus (Sudan ebolavirus)", downsampleTo: 100000},
   {id: "NC_014372", label: "Tai Forest Virus (Tai Forest ebolavirus, Cote d'Ivoire ebolavirus)", downsampleTo: 100000},
-  {id: "NC_007367", label: "Do not use", downsampleTo: 100000},
- 
+
 
 ]
 
