@@ -102,7 +102,8 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     if type == "paired":
         cmd_count_reads = f'zcat {accession}_1.fastq.gz | wc -l'
     else:
-        cmd_count_reads = f'zcat {accession}.fastq.gz | wc -l'
+        addition = "_subreads" if type == "subreads" else ""
+        cmd_count_reads = f'zcat {accession}{addition}.fastq.gz | wc -l'
     proc = await asyncio.create_subprocess_shell(cmd_count_reads, stdout=asyncio.subprocess.PIPE)
     stdout, stderr = await proc.communicate()
     nreads = int(stdout.decode('utf-8').strip())
