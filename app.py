@@ -98,15 +98,19 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
         else:
             type = "single"
     max_reads = 100000
+    if type=="subreads":
+         cmd_mv = f'mv {accession}_subreads.fastq.gz {acession}.fastq.gz'
+         proc = await asyncio.create_subprocess_shell(cmd_mv)
+         await proc.wait()
     # get number of reads in file
     if type == "paired":
         cmd_count_reads = f'zcat {accession}_1.fastq.gz | wc -l'
     else:
-        addition = "_subreads" if type == "subreads" else ""
-        cmd_count_reads = f'zcat {accession}{addition}.fastq.gz | wc -l'
+        cmd_count_reads = f'zcat {accession}.fastq.gz | wc -l'
     proc = await asyncio.create_subprocess_shell(cmd_count_reads, stdout=asyncio.subprocess.PIPE)
     stdout, stderr = await proc.communicate()
     nreads = int(stdout.decode('utf-8').strip())
+
     if nreads > max_reads:
         do_log(f"Downsampling {accession} from {nreads} to {max_reads} reads")
         # downsample with seqtk
@@ -119,11 +123,10 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
             proc = await asyncio.create_subprocess_shell(cmd_downsample)
             await proc.wait()
         else:
-            addition = "_subreads" if type == "subreads" else ""
-            downsample_fraction = max_reads / nreads
-            cmd_downsample = f'seqtk sample -s100 {accession}{addition}.fastq.gz {downsample_fraction} > {accession}.fastq.gz.tmp && mv {accession}.fastq.gz.tmp {accession}.fastq.gz'
+            cmd_downsample = f'seqtk sample -s100 {accession}.fastq.gz {downsample_fraction} > {accession}.fastq.gz.tmp && mv {accession}.fastq.gz.tmp {accession}.fastq.gz'
             proc = await asyncio.create_subprocess_shell(cmd_downsample)
             await proc.wait()
+        
 
 
 
