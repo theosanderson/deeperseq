@@ -92,7 +92,7 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
         if "1.fastq.gz" in file:
             type = "paired"
             break
-        elif "subreads" in file
+        elif "subreads" in file:
             type = "subreads"
             break   
         else:
