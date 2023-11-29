@@ -92,6 +92,9 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
         if "1.fastq.gz" in file:
             type = "paired"
             break
+        elif "subreads" in file
+            type = "subreads"
+            break   
         else:
             type = "single"
     max_reads = 100000
@@ -115,8 +118,9 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
             proc = await asyncio.create_subprocess_shell(cmd_downsample)
             await proc.wait()
         else:
+            addition = "_subreads" if type == "subreads" else ""
             downsample_fraction = max_reads / nreads
-            cmd_downsample = f'seqtk sample -s100 {accession}.fastq.gz {downsample_fraction} > {accession}.fastq.gz.tmp && mv {accession}.fastq.gz.tmp {accession}.fastq.gz'
+            cmd_downsample = f'seqtk sample -s100 {accession}{addition}.fastq.gz {downsample_fraction} > {accession}.fastq.gz.tmp && mv {accession}.fastq.gz.tmp {accession}.fastq.gz'
             proc = await asyncio.create_subprocess_shell(cmd_downsample)
             await proc.wait()
 
