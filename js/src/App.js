@@ -9,7 +9,7 @@ const referenceOptions = [
    {id: "custom", label: "Custom", downsampleTo: 100000},
    {id: "-----", label: "-----", downsampleTo: 100000},
 
-  {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://s3.amazonaws.com/igv.org.genomes/ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
+  {id: "ASM985889v3", label: "SARS-CoV-2", faUrl:"https://raw.githubusercontent.com/theosanderson/deeperseq/refs/heads/master/GCF_009858895.2_ASM985889v3_genomic.fna", downsampleTo: 100000},
 
   // Credit to Viral MSA for sequences below
   {id: "NC_039345", label: "Bombali Virus (Bombali ebolavirus)", downsampleTo: 100000},
