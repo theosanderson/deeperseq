@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shlex
 import subprocess
 import uuid
 
@@ -87,6 +88,18 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     if len(files) == 0:
         do_log(f"[ERROR] Error downloading accession {accession}")
         return
+
+    await fastq_to_bam(accession, task_id, ref, downSampleTo, refName)
+
+
+async def fastq_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int = 100000, refName: str = None):
+    # expects {accession}.fastq.gz, or {accession}_1.fastq.gz and {accession}_2.fastq.gz, in the working directory
+
+    def do_log(s):
+        logs[task_id].append(s)
+        logging.info(s)
+
+    files = glob.glob(f"{accession}*.fastq.gz")
     type = None
     for file in files:
         if "1.fastq.gz" in file:
@@ -99,7 +112,7 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
             type = "single"
     max_reads = 100000
     if type=="subreads":
-         cmd_mv = f'mv {accession}_subreads.fastq.gz {acession}.fastq.gz'
+         cmd_mv = f'mv {accession}_subreads.fastq.gz {accession}.fastq.gz'
          proc = await asyncio.create_subprocess_shell(cmd_mv)
          await proc.wait()
     # get number of reads in file
@@ -114,8 +127,8 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     if nreads > max_reads:
         do_log(f"Downsampling {accession} from {nreads} to {max_reads} reads")
         # downsample with seqtk
+        downsample_fraction = max_reads / nreads
         if type == "paired":
-            downsample_fraction = max_reads / nreads
             cmd_downsample = f'seqtk sample -s100 {accession}_1.fastq.gz {downsample_fraction} > {accession}_1.fastq.gz.tmp && mv {accession}_1.fastq.gz.tmp {accession}_1.fastq.gz'
             proc = await asyncio.create_subprocess_shell(cmd_downsample)
             await proc.wait()
@@ -134,7 +147,7 @@ async def raw_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int =
     do_log(f"Type: {type}")
 
     # Download reference genome, overwrite if it exists
-    cmd_wget = f'wget -O {accession}.ref.fa {ref}'
+    cmd_wget = f'wget -O {accession}.ref.fa {shlex.quote(ref)}'
     proc = await asyncio.create_subprocess_shell(cmd_wget)
     await proc.wait()
     do_log(f"Downloaded reference genome from {ref}")
@@ -212,6 +225,57 @@ async def align(accession: str, ref: str = None, downSampleTo: int = 50000, refN
     logging.info(f"Aligning {accession} to reference genome")
     task_id = await start_task(accession, ref, downSampleTo, refName)
     return {"task_id": task_id}
+
+async def url_to_bam(name: str, task_id: str, urls: list, ref: str, downSampleTo: int = 100000, refName: str = None):
+
+    def do_log(s):
+        logs[task_id].append(s)
+        logging.info(s)
+
+    # one URL is single-end, two are paired-end
+    dests = [f"{name}.fastq.gz"] if len(urls) == 1 else [f"{name}_1.fastq.gz", f"{name}_2.fastq.gz"]
+    for url, dest in zip(urls, dests):
+        do_log(f"Downloading FASTQ from {url}")
+        proc = await asyncio.create_subprocess_shell(f'wget -q -O {dest}.download {shlex.quote(url)}',
+            stderr = asyncio.subprocess.PIPE,
+            stdout = asyncio.subprocess.PIPE)
+        last_total_size = -1
+        while proc.returncode is None:
+            await asyncio.sleep(1.0)
+            if os.path.exists(f"{dest}.download"):
+                total_size = os.path.getsize(f"{dest}.download")
+                if total_size != last_total_size:
+                    logs[task_id].append(f"Downloading: {total_size} bytes")
+                    last_total_size = total_size
+        await proc.communicate()
+        if proc.returncode != 0 or os.path.getsize(f"{dest}.download") == 0:
+            do_log(f"[ERROR] Error downloading {url}")
+            for file in glob.glob(f"{name}*"):
+                os.remove(file)
+            return
+
+        # the rest of the pipeline expects gzipped FASTQ, so compress plain text files
+        with open(f"{dest}.download", "rb") as f:
+            is_gzipped = f.read(2) == b'\x1f\x8b'
+        cmd = f'mv {dest}.download {dest}' if is_gzipped else f'gzip -1 -c {dest}.download > {dest} && rm {dest}.download'
+        proc = await asyncio.create_subprocess_shell(cmd)
+        await proc.wait()
+
+    await fastq_to_bam(name, task_id, ref, downSampleTo, refName)
+
+#/align_url?url=http://example.com/reads.fastq.gz&ref=http://example.com/ref.fa (add url2 for paired-end reads)
+@app.post("/align_url")
+async def align_url(url: str, ref: str, url2: str = None, downSampleTo: int = 50000, refName: str = None):
+    urls = [u for u in [url, url2] if u]
+    if not all(u.startswith(("http://", "https://", "ftp://")) for u in urls):
+        return {"error": "URLs must start with http://, https:// or ftp://"}
+    # generate the name ourselves so that it is safe to use in shell commands and file paths
+    name = f"url_{uuid.uuid4().hex[:12]}"
+    logging.info(f"Aligning FASTQ from {urls} as {name}")
+    task_id = str(uuid.uuid4())
+    logs[task_id] = []
+    tasks[task_id] = asyncio.create_task(url_to_bam(name, task_id, urls, ref, downSampleTo, refName))
+    return {"task_id": task_id, "name": name}
 
 @app.get("/poll/{task_id}")
 async def poll(task_id: str):

@@ -41,15 +41,21 @@ const referenceOptions = [
 
 const backend = ""
 
+const getFaUrl = (refGenome, genbankId) => refGenome.faUrl ? refGenome.faUrl : refGenome.id === "custom" ? `https://genbank-api.vercel.app/api/genbank/${genbankId}?rettype=fasta` : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
+
 
 
 function Alignment() {
   const defaultAcc = "ERR8254282";
   const defaultRef = referenceOptions[2];
   const [accession, setAccession] = useState('');
+  const [inputMode, setInputMode] = useState('accession');
+  const [fastqUrl, setFastqUrl] = useState('');
+  const [fastqUrl2, setFastqUrl2] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [refGenome, setRefGenome] = useState(referenceOptions[2]);
   const [genbankId, setGenbankId] = useState('');
-  const faUrl = refGenome.faUrl ? refGenome.faUrl : refGenome.id === "custom" ? `https://genbank-api.vercel.app/api/genbank/${genbankId}?rettype=fasta` : `https://genbank-api.vercel.app/api/genbank/${refGenome.id}?rettype=fasta`
+  const faUrl = getFaUrl(refGenome, genbankId);
 
 
   
@@ -107,7 +113,8 @@ function Alignment() {
     setAccession(event.target.value);
   };
 
-  const doAlign = async (accession) => {
+  // ref and gbId are passed explicitly when starting from query params, before state has updated
+  const doAlign = async (accession, ref = refGenome, gbId = genbankId) => {
     try {
       // check accession starts with SRR or ERR
       accession = accession.trim();
@@ -115,8 +122,9 @@ function Alignment() {
         setError('Accession must start with SRR or ERR');
         return;
       }
-      const response = await axios.post(`${backend}/align/${accession}?ref=${faUrl}&downsampleTo=${refGenome.downsampleTo}`);
+      const response = await axios.post(`${backend}/align/${accession}?ref=${getFaUrl(ref, gbId)}&downsampleTo=${ref.downsampleTo}`);
       const taskID = response.data.task_id;
+      setDisplayName(accession);
       setTaskID(taskID);
       setStatus('processing');
       setError('');
@@ -128,19 +136,69 @@ function Alignment() {
     }
   };
 
-  const handleAlignmentSubmit = async (event) => {
-    event.preventDefault();
-    doAlign(accession);
-   
+  const doAlignUrl = async (url1, url2, ref = refGenome, gbId = genbankId) => {
+    try {
+      const urls = [url1.trim(), url2.trim()].filter(u => u);
+      if (urls.length === 0 || !urls.every(u => /^(https?|ftp):\/\//.test(u))) {
+        setError('FASTQ URLs must start with http://, https:// or ftp://');
+        return;
+      }
+      const params = new URLSearchParams({ url: urls[0], ref: getFaUrl(ref, gbId), downsampleTo: ref.downsampleTo });
+      if (urls[1]) {
+        params.append('url2', urls[1]);
+      }
+      const response = await axios.post(`${backend}/align_url?${params}`);
+      if (response.data.error) {
+        setError(response.data.error);
+        return;
+      }
+      // the server names the sample itself; the BAM is served under that name
+      setAccession(response.data.name);
+      setDisplayName(urls.map(u => u.split('/').pop()).join(' + '));
+      setTaskID(response.data.task_id);
+      setStatus('processing');
+      setError('');
+      setLogs([]);
+      pollTask(response.data.task_id);
+    } catch (error) {
+      console.error(error);
+      setError('Error starting alignment task');
+    }
   };
 
-  // if the query string has an accession, start the alignment
+  const handleAlignmentSubmit = async (event) => {
+    event.preventDefault();
+    if (inputMode === 'url') {
+      doAlignUrl(fastqUrl, fastqUrl2);
+    } else {
+      doAlign(accession);
+    }
+  };
+
+  // if the query string has an accession (?acc=) or FASTQ URL(s) (?url=&url2=), start the alignment
+  // ?ref= can be one of the reference ids above, or any other GenBank ID
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const acc = urlParams.get('acc');
+    const url = urlParams.get('url');
+    const url2 = urlParams.get('url2') || '';
+    const refParam = urlParams.get('ref');
+    let ref = refGenome;
+    let gbId = genbankId;
+    if (refParam) {
+      ref = referenceOptions.find((o) => o.id === refParam && o.id !== "-----") || referenceOptions[0];
+      gbId = ref.id === "custom" ? refParam : '';
+      setRefGenome(ref);
+      setGenbankId(gbId);
+    }
     if (acc) {
       setAccession(acc);
-      doAlign(acc);
+      doAlign(acc, ref, gbId);
+    } else if (url) {
+      setInputMode('url');
+      setFastqUrl(url);
+      setFastqUrl2(url2);
+      doAlignUrl(url, url2, ref, gbId);
     }
   }, []);
 
@@ -187,8 +245,21 @@ function Alignment() {
       {status !== 'complete' && status!== 'processing' && (
         <>
          <p
-        className='text-center'>Enter a SRR/ERR accession. This will be mapped to the selected reference and then displayed<br />(Reads may be downsampled).</p>
+        className='text-center'>Enter a SRR/ERR accession or the URL of a FASTQ file. This will be mapped to the selected reference and then displayed<br />(Reads may be downsampled).</p>
       <form className="flex flex-col space-y-2" onSubmit={handleAlignmentSubmit}>
+       <div className="flex rounded-md border border-gray-300 overflow-hidden text-sm">
+        {[['accession', 'SRA/ENA accession'], ['url', 'FASTQ URL']].map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => { setInputMode(mode); setError(''); }}
+            className={`flex-1 px-3 py-1 ${inputMode === mode ? 'bg-blue-500 text-white' : 'bg-white text-gray-600'}`}
+          >
+            {label}
+          </button>
+        ))}
+       </div>
+       {inputMode === 'accession' ? (
        <div>
         <label className="font-semibold block text-sm text-gray-600">
           SRA/ENA Accession ID:
@@ -200,6 +271,33 @@ function Alignment() {
           />
         </label>
         </div>
+       ) : (
+       <>
+        <div>
+        <label className="font-semibold block text-sm text-gray-600">
+          FASTQ URL (optionally gzipped):
+          <input
+            type="url"
+            value={fastqUrl}
+            placeholder="https://example.com/reads.fastq.gz"
+            onChange={e => setFastqUrl(e.target.value)}
+            className="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+          />
+        </label>
+        </div>
+        <div>
+        <label className="font-semibold block text-sm text-gray-600">
+          Second FASTQ URL (optional, for paired-end reads):
+          <input
+            type="url"
+            value={fastqUrl2}
+            onChange={e => setFastqUrl2(e.target.value)}
+            className="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+          />
+        </label>
+        </div>
+       </>
+       )}
         <div>
         <label className="font-semibold block text-sm text-gray-600">
           Reference Genome:
@@ -238,6 +336,7 @@ function Alignment() {
          {// load default accession with underlined text
           }
           <a href="#" onClick={() => {
+            setInputMode('accession');
             setAccession('SRR10903401');
             setRefGenome(defaultRef);
           }
@@ -269,7 +368,7 @@ function Alignment() {
       {status === 'complete' && (
         <div className="flex flex-col items-center space-y-4 w-full">
           
-          <h3 className="text-lg font-bold">{accession} reads</h3>
+          <h3 className="text-lg font-bold">{displayName || accession} reads</h3>
           <div
             id="igv-div"
             className="bg-white border border-gray-300 rounded-md  mb-3"
