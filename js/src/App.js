@@ -53,6 +53,7 @@ function Alignment() {
   const [fastqUrl, setFastqUrl] = useState('');
   const [fastqUrl2, setFastqUrl2] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [needsRef, setNeedsRef] = useState(false);
   const [refGenome, setRefGenome] = useState(referenceOptions[2]);
   const [genbankId, setGenbankId] = useState('');
   const faUrl = getFaUrl(refGenome, genbankId);
@@ -177,6 +178,7 @@ function Alignment() {
 
   // if the query string has an accession (?acc=) or FASTQ URL(s) (?url=&url2=), start the alignment
   // ?ref= can be one of the reference ids above, or any other GenBank ID
+  // FASTQ URLs without ?ref= only fill in the form, so that a reference can be chosen
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const acc = urlParams.get('acc');
@@ -198,7 +200,11 @@ function Alignment() {
       setInputMode('url');
       setFastqUrl(url);
       setFastqUrl2(url2);
-      doAlignUrl(url, url2, ref, gbId);
+      if (refParam) {
+        doAlignUrl(url, url2, ref, gbId);
+      } else {
+        setNeedsRef(true);
+      }
     }
   }, []);
 
@@ -298,6 +304,9 @@ function Alignment() {
         </div>
        </>
        )}
+        {needsRef && (
+          <p className="text-blue-700 text-sm">Choose the reference genome for these reads, then start the alignment.</p>
+        )}
         <div>
         <label className="font-semibold block text-sm text-gray-600">
           Reference Genome:

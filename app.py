@@ -171,7 +171,7 @@ async def fastq_to_bam(accession: str, task_id: str, ref: str, downSampleTo: int
 
 
     if type == "paired":
-        cmd_minimap2 = f'minimap2 -a ./{accession}.ref.fa {accession}_1.fastq.gz {accession}_2.fastq.gz -t {nproc} | python count_lines.py {task_id}.lines |  samtools view -bS - > {accession}.bam'
+        cmd_minimap2 = f'minimap2 -a -x sr ./{accession}.ref.fa {accession}_1.fastq.gz {accession}_2.fastq.gz -t {nproc} | python count_lines.py {task_id}.lines |  samtools view -bS - > {accession}.bam'
     else:   
         cmd_minimap2 = f'minimap2 -a ./{accession}.ref.fa {accession}.fastq.gz | python count_lines.py {task_id}.lines | samtools view -bS -t {nproc} - > {accession}.bam'
     
